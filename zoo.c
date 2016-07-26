@@ -61,6 +61,8 @@ static int zoo_connect(zoo_orm_option *orm_option, zval *this_ptr TSRMLS_CC) {
         php_error(E_ERROR, "zoo not supported type");
     }
     
+    smart_str_0(&source);
+    
     object_init_ex(&pdo, php_pdo_get_dbh_ce());
 
     zoo_string_zval(&fnval, "__construct");
@@ -78,7 +80,7 @@ static int zoo_connect(zoo_orm_option *orm_option, zval *this_ptr TSRMLS_CC) {
         zval_ptr_dtor(&params[i]);
     }
     
-    smart_str_0(&source);
+    smart_str_free(&source);
     
     return 1;
 }
@@ -124,8 +126,7 @@ PHP_METHOD(Zoo, select) {
 
     smart_str_appends(&statements, "from ");
     smart_str_appendl(&statements, Z_STRVAL_P(table), Z_STRLEN_P(table));
-    printf("%s", ZSTR_VAL(statements.s));
-    printf("%s", "\n");
+    smart_str_0(&statements);
     
     zoo_string_zval(&params[0], ZSTR_VAL(statements.s));
     zoo_string_zval(&query, "query");
@@ -134,8 +135,8 @@ PHP_METHOD(Zoo, select) {
     call_user_function(NULL, getThis(), &query, &retval, 1, params);
     call_user_function(NULL, &retval, &fetchall, &data, 0, NULL);
     
-    smart_str_0(&statements);
-    
+    smart_str_free(&statements);
+
     RETURN_ZVAL(&data, 1, 0);
 }
 
@@ -214,9 +215,7 @@ const zend_function_entry zoo_methods[] = {
 };
 
 zend_module_entry zoo_module_entry = {
-#if ZEND_MODULE_API_NO >= 20010901
-	STANDARD_MODULE_HEADER,
-#endif
+    STANDARD_MODULE_HEADER,
 	"zoo",
 	zoo_methods,
 	PHP_MINIT(zoo),
@@ -224,9 +223,7 @@ zend_module_entry zoo_module_entry = {
 	PHP_RINIT(zoo),		/* Replace with NULL if there's nothing to do at request start */
 	PHP_RSHUTDOWN(zoo),	/* Replace with NULL if there's nothing to do at request end */
 	PHP_MINFO(zoo),
-#if ZEND_MODULE_API_NO >= 20010901
 	PHP_ZOO_VERSION,
-#endif
 	STANDARD_MODULE_PROPERTIES
 };
 
